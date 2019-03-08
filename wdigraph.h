@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include "digraph.h"
+#include "digraph.cpp" //CHANGE THIS LATER
 
 using namespace std;
 
