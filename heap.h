@@ -101,10 +101,17 @@ void BinaryHeap<T, K>::popMin() {
 
   // pop the last item from the list
   heap.pop_back();
+  heapSize -= 1;
 
-  // v <- root vertex
-  pair<T, K> v = heap[0];
+  // if # of items <= 2
+  if (heapSize <= 2) {
+    if (heap[0].second > heap[heapSize - 1].second) {
+      swap(heap[0], heap[heapSize - 1]);
+    }
+    return;
+  }
 
+  // general case
   // i: index of v
   int i = 0;
   // while the heap property is violated at v do
@@ -124,13 +131,13 @@ void BinaryHeap<T, K>::popMin() {
 
     // if v only has one child
     if (lChild(i) == heapSize - 1) {
-      if (heap[i].second > heap[lChild(i)].second) {
-        swap(heap[i], heap[lChild(i)]);
+      if (heap[i].second > heap[heapSize - 1].second) {
+        swap(heap[i], heap[heapSize - 1]);
       }
 
       break;
     }
-    // if v  has no child
+    // if v has no child
     else if (lChild(i) > heapSize - 1) {
       break;
     }
