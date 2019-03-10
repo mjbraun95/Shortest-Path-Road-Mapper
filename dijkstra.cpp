@@ -6,7 +6,6 @@
   Assignment 2: Directions Part 1
 
 */
-#include <iostream>
 #include <unordered_map>
 #include <utility> // for pair()
 #include "dijkstra.h"
@@ -32,8 +31,7 @@ void dijkstra(const WDigraph& graph, int startVertex,
 
     // while there is an active fire
     while (events.size() > 0) {
-        // find the fire that reaches its endpoint "v" earliest,
-        // represented as an iterator into the list
+        // find the fire that reaches its endpoint v earliest
         pair<int, PLI> earliestFire = events.min();
         // to reduce notation in the code below, this u, v, d agrees with
         // the intuition presented in the comment
@@ -46,9 +44,10 @@ void dijkstra(const WDigraph& graph, int startVertex,
             continue;
         }
 
-        // if v doesn't belong to reached then
+        // if v doesn't belong to searchTree then
         // declare that v is "burned" at time d with a fire that spawned from u
         searchTree[v] = PLI(d, u);
+
         // now start fires from all edges exiting vertex v
         for (auto iter = graph.neighbours(v); iter != graph.endIterator(v); iter++) {
             int nbr = *iter;

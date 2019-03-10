@@ -6,11 +6,12 @@
   Assignment 2: Directions Part 1
 
 */
-#include <cstdlib>
+#include <cstdlib> // for abs
 #include <fstream>
 #include <iostream>
 #include <list>
 #include <unordered_map>
+#include <vector>
 #include "dijkstra.h"
 #include "heap.h"
 #include "wdigraph.h"
@@ -26,7 +27,7 @@ struct Point {
 };
 
 // Return the Manhattan distance between the two given points
-long long manhattan(const Point& pt1,const Point& pt2) {
+long long manhattan(const Point& pt1, const Point& pt2) {
     return (abs(pt1.lat - pt2.lat) + abs(pt1.lon - pt2.lon));
 }
 
@@ -54,7 +55,6 @@ void readGraph(string filename, WDigraph& graph, unordered_map<int, Point>& poin
         }
 
         // get the info of vertices & edges according to the positions of the comma
-        // store the info in the undirectedCityGraph object
         if (content.front() == 'V') {
             // e.g. V,29577354,53.430996,-113.491331
             // vertex ID
@@ -72,12 +72,11 @@ void readGraph(string filename, WDigraph& graph, unordered_map<int, Point>& poin
             newPoint.lat = LLlat;
             newPoint.lon = LLlon;
 
-            // Adds VID & its coordinates to points
+            // Adds VID & its coordinates to the points
             points.insert({VID, newPoint});
         }
         else if (content.front() == 'E') {
             // e.g. E,277483195,277483200,109 Street NW
-            // the info of edges is between the 1st & 3rd comma
             // first edge
             int edge1 = stoi(content.substr(pos.begin()[0] + 1, pos.begin()[1] - pos.begin()[0] - 1)); 
             // second edge
@@ -85,7 +84,7 @@ void readGraph(string filename, WDigraph& graph, unordered_map<int, Point>& poin
             // the name of the street
             // alongTheEdge = content.substr(pos.begin()[2] + 1);
 
-            // Calculates Manhattan distance between the two edges
+            // Calculates Manhattan distance between 2 edges
             // Adds edges to WDigraph
             graph.addEdge(edge1, edge2, manhattan(points[edge1], points[edge2]));
         }
@@ -93,7 +92,7 @@ void readGraph(string filename, WDigraph& graph, unordered_map<int, Point>& poin
 }
 
 // find the closest vertices in the road map of Edmonton to
-// the start and end points according to the Manhattan distance
+// the start & end points according to the Manhattan distance
 int findNearstVertex(Point currentPoint, unordered_map<int, Point>& points) {
     // comparison starts from the 1st vertex stored in the points
     int nearstV = points.begin()->first;
@@ -101,23 +100,27 @@ int findNearstVertex(Point currentPoint, unordered_map<int, Point>& points) {
 
     for (auto iter: points) {
         if (manhattan(currentPoint, iter.second) < lowestWeight) {
-            lowestWeight = manhattan(currentPoint, iter.second);
             nearstV = iter.first;
+            lowestWeight = manhattan(currentPoint, iter.second);
         }
     }
 
     return nearstV;
 }
 
-// searchTree[v] will be the pair (d, u) of the node u prior to v
-// in a shortest path to v and d will be the shortest path distance to v
+// compute a shortest path along Edmonton streets between the two vertices found,
+// and finally output the found way-points from the first vertex to the last
+// searchTree[v] will be the pair (d, u) of the node u prior to v in a shortest path to v
+// and d will be the shortest path distance to v
 void getShortestPath(int startV, int endV,
     unordered_map<int, PLI>& searchTree, unordered_map<int, Point>& points) {
     // read off a path
     list<int> path;
+    // no path from the start to the end vertex nearest to the start and end points sent to the server
     if (searchTree.find(endV) == searchTree.end()) {
       cout << "N" << " " << 0 << endl;
     }
+    // send the coordinates of the way-points
     else {
         int stepping = endV;
         while (stepping != startV) {
@@ -128,14 +131,7 @@ void getShortestPath(int startV, int endV,
         }
         path.push_front(startV);
 
-        // if the path being communicated has over 500 way points,
-        // treat this as no path
         int steps = path.size();
-        if (steps > 500) {
-            cout << "N" << " " << 0 << endl;
-            cout << "E" << endl;
-            return;
-        }
         cout << "N" << " " << steps << endl;
         for (auto iter : path) {
             cout << "W" << " " << points[iter].lat << " " << points[iter].lon << endl;
@@ -144,16 +140,19 @@ void getShortestPath(int startV, int endV,
     cout << "E" << endl;
 }
 
+// receive and process requests by reading from and writing to stdin & stdout, respectively
 void stdIO() {
     WDigraph graph;
     unordered_map<int, Point> points;
+    // read the Edmonton map data from the provided file and load it into the given WDigraph object
+    // store vertex coordinates in Point struct and map each vertex to its corresponding Point struct
     readGraph("edmonton-roads-2.0.1.txt", graph, points);
 
     // current position & destination
     Point startP;
     Point endP;
 
-    // read form stdin
+    // read from stdin
     string request;
     while (cin >> request) {
         if (request == "R") {
@@ -162,11 +161,14 @@ void stdIO() {
             // the start and end points according to the Manhattan distance
             int startV = findNearstVertex(startP, points);
             int endV = findNearstVertex(endP, points);
-            unordered_map<int, PLI> searchTree;
+
             // run the search
-            // searchTree[v] will be the pair (d, u) of the node u prior to v
-            // in a shortest path to v and d will be the shortest path distance to v
+            // searchTree[v] will be the pair (d, u) of the node u prior to v in a shortest path to v
+            // and d will be the shortest path distance to v
+            unordered_map<int, PLI> searchTree;
             dijkstra(graph, startV, searchTree);
+            // compute a shortest path along Edmonton streets between the two vertices found,
+            // and finally output the found way-points from the first vertex to the last
             getShortestPath(startV, endV, searchTree, points);
             break;
         }
@@ -176,6 +178,8 @@ void stdIO() {
 } 
 
 int main() {
+    // receive and process requests by reading from
+    // and writing to stdin & stdout, respectively
     stdIO();
     return 0;
 }

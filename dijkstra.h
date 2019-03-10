@@ -8,6 +8,8 @@
 */
 #ifndef _DIJKSTRA_H_
 #define _DIJKSTRA_H_
+#include <unordered_map>
+#include <utility> // for pair()
 #include "wdigraph.h"
 
 // PLI is an alias for "pair<long long, int>" type as discussed in class
