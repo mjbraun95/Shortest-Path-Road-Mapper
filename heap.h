@@ -1,3 +1,11 @@
+/*
+  Names:  Ang Li  Matthew Braun
+  IDs:    1550746 1497171
+  CMPUT 275, Winter 2019
+
+  Assignment 2: Directions Part 1
+
+*/
 #ifndef _HEAP_H_
 #define _HEAP_H_
 
@@ -103,8 +111,13 @@ void BinaryHeap<T, K>::popMin() {
   heap.pop_back();
   heapSize -= 1;
 
+  // edge case
+  // if # of items == 0
+  if (heapSize == 0) {
+    return;
+  }
   // if # of items <= 2
-  if (heapSize <= 2) {
+  else if (heapSize <= 2) {
     if (heap[0].second > heap[heapSize - 1].second) {
       swap(heap[0], heap[heapSize - 1]);
     }

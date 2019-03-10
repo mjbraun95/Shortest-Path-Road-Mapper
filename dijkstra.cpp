@@ -1,73 +1,62 @@
-#include <iostream>
-#include <list>
-#include <utility> // for pair()
-// pair is a simple container of two heterogeneous objects
-// which can be accessed by dot operator followed by 
-// first or second keyword
+/*
+  Names:  Ang Li  Matthew Braun
+  IDs:    1550746 1497171
+  CMPUT 275, Winter 2019
 
+  Assignment 2: Directions Part 1
+
+*/
+#include <iostream>
 #include <unordered_map>
+#include <utility> // for pair()
+#include "dijkstra.h"
+#include "heap.h"
 #include "wdigraph.h"
 
 using namespace std;
 
-// for brevity
-// typedef introduces a synonym (alias) 
-// for the type specified
-typedef pair<int, long long> PIL;
+// PLI is an alias for "pair<long long, int>" type as discussed in class
+typedef pair<long long, int> PLI;
 
-// again, for brevity
-// used to store a vertex v and its predecessor pair (u,d) on the search
-// where u is the node prior to v on a path to v of cost d
-// eg. PIPIL x;
-// x.first is "v", x.second.first is "u" and x.second.second is "d" from this
-typedef pair<int, PIL> PIPIL;
-
+// Dijkstra's algorithm for finding the cheapest path 
 void dijkstra(const WDigraph& graph, int startVertex, 
-    unordered_map<int, PIL>& searchTree) {
+    unordered_map<int, PLI>& searchTree) {
 
-    // All active fires stored as follows:
-    // say an entry is (v, (u, d)), then there is a fire that started at u
-    // and will burn the u->v edge, reaching v at time d
-    list<PIPIL> fires;
+    // all active fires stored as follows:
+    // say an entry is (v, (d, u)), then there is a fire that started at u
+    // and will burn the u -> v edge, reaching v at time d
+    BinaryHeap<int, PLI> events;
 
-    // at time 0, the startVertex burns, we use -1 to indicate there is
-    // no "predecessor" of the startVertex
-    fires.push_back(PIPIL(startVertex, PIL(-1, 0)));
+    // at time 0, the startVertex burns
+    events.insert(startVertex, PLI(0, startVertex));
 
     // while there is an active fire
-    while (!fires.empty()) {
+    while (events.size() > 0) {
         // find the fire that reaches its endpoint "v" earliest,
         // represented as an iterator into the list
-        auto earliestFire = fires.begin();
-        for (auto iter = fires.begin(); iter != fires.end(); ++iter) {
-            if (iter->second.second < earliestFire->second.second) {
-                earliestFire = iter;
-            }
-        }
+        pair<int, PLI> earliestFire = events.min();
+        // to reduce notation in the code below, this u, v, d agrees with
+        // the intuition presented in the comment
+        int v = earliestFire.first; 
+        int u = earliestFire.second.second;
+        long long d = earliestFire.second.first;
+        events.popMin();
 
-        // to reduce notation in the code below, this u,v,d agrees with
-        // the intuition presented in the comment when PIPIL is typedef'ed
-        int v = earliestFire->first, u = earliestFire->second.first, d = earliestFire->second.second;
-
-        // remove this fire
-        fires.erase(earliestFire);
-
-        // if u is already "burned", there nothing to do
         if (searchTree.find(v) != searchTree.end()) {
             continue;
         }
 
+        // if v doesn't belong to reached then
         // declare that v is "burned" at time d with a fire that spawned from u
-        searchTree[v] = PIL(u, d);
-
+        searchTree[v] = PLI(d, u);
         // now start fires from all edges exiting vertex v
         for (auto iter = graph.neighbours(v); iter != graph.endIterator(v); iter++) {
             int nbr = *iter;
 
             // the fire starts at v at time d and will reach nbr
-            // at time d + (length of v->nbr edge)
-            int burn = d + graph.getCost(v, nbr);
-            fires.push_back(PIPIL(nbr, PIL(v, burn)));
+            // at time d + (length of v -> nbr edge)
+            long long burn = d + graph.getCost(v, nbr);
+            events.insert(nbr, PLI(burn, v));
         }
     }
 }
