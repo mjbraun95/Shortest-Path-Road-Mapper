@@ -61,11 +61,11 @@ void readGraph(string filename, WDigraph& graph, unordered_map<int, Point>& poin
             int VID = stoi(content.substr(pos.begin()[0] + 1, pos.begin()[1] - pos.begin()[0] - 1)); 
             
             // latitude
-            double lat = stod(content.substr(pos.begin()[1] + 1, pos.begin()[2] - pos.begin()[1] - 1)); 
+            long double lat = stold(content.substr(pos.begin()[1] + 1, pos.begin()[2] - pos.begin()[1] - 1)); 
             long long LLlat = static_cast<long long>(100000 * lat);
 
             // longitude
-            double lon = stod(content.substr(pos.begin()[2] + 1));
+            long double lon = stold(content.substr(pos.begin()[2] + 1));
             long long LLlon = static_cast<long long>(100000 * lon);
 
             Point newPoint;
@@ -116,9 +116,11 @@ void getShortestPath(int startV, int endV,
     unordered_map<int, PLI>& searchTree, unordered_map<int, Point>& points) {
     // read off a path
     list<int> path;
+    string response;
     // no path from the start to the end vertex nearest to the start and end points sent to the server
     if (searchTree.find(endV) == searchTree.end()) {
       cout << "N" << " " << 0 << endl;
+      return;
     }
     // send the coordinates of the way-points
     else {
@@ -134,7 +136,17 @@ void getShortestPath(int startV, int endV,
         int steps = path.size();
         cout << "N" << " " << steps << endl;
         for (auto iter : path) {
+            while (cin >> response) {
+                if (response == "A") {
+                    break;
+                }
+            }
             cout << "W" << " " << points[iter].lat << " " << points[iter].lon << endl;
+        }
+    }
+    while (cin >> response) {
+        if (response == "A") {
+            break;
         }
     }
     cout << "E" << endl;
