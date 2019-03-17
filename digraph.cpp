@@ -50,23 +50,3 @@ vector<int> Digraph::vertices() {
     }
   return v;
 }
-
-bool Digraph::isWalk(vector<int> walk) {
-  if (walk.size() == 0)
-    return false;
-  if (walk.size() == 1)
-    return isVertex(walk[0]);
-  for (vector<int>::size_type i=0; i<walk.size()-1; i++)
-    if (!isEdge(walk[i], walk[i+1]))
-      return false;
-
-  return true;
-}
-
-bool Digraph::isPath(vector<int> path) {
-  set<int> s(path.begin(), path.end());
-  if (s.size() < path.size())
-    return false;
-
-  return isWalk(path);
-}

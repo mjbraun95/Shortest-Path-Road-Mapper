@@ -1,24 +1,23 @@
 CC=g++
-CFLAGS=-c -Wall -O2 -std=c++11
 LFLAGS=
-PROGS= server
-OBJS= server.o digraph.o dijkstra.o
+CFLAGS=-c -Wall -std=c++11 -O2
+OBJS=digraph.o dijkstra.o server.o server_util.o
+EXE=server
 
-# executable targets
-all: server
+$(EXE): $(OBJS)
+	$(CC) $(OBJS) -o $(EXE) $(LFLAGS)
 
-server: server.o digraph.o dijkstra.o
-	$(CC) server.o dijkstra.o digraph.o -o server $(LFLAGS)
-
-# object targets
-server.o: server.cpp digraph.h dijkstra.h heap.h wdigraph.h
+server.o: server.cpp  digraph.h dijkstra.h wdigraph.h server_util.h
 	$(CC) server.cpp -o server.o $(CFLAGS)
 
-dijkstra.o: dijkstra.cpp dijkstra.h digraph.h heap.h wdigraph.h
+dijkstra.o: dijkstra.cpp dijkstra.h heap.h digraph.h wdigraph.h
 	$(CC) dijkstra.cpp -o dijkstra.o $(CFLAGS)
 
 digraph.o: digraph.cpp digraph.h
 	$(CC) digraph.cpp -o digraph.o $(CFLAGS)
 
+server_util.o: server_util.cpp server_util.h wdigraph.h
+	$(CC) server_util.cpp -o server_util.o $(CFLAGS)
+
 clean:
-	@rm $(OBJS) $(PROGS)
+	@rm -f $(OBJS) $(EXE)

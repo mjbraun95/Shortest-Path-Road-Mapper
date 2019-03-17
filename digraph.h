@@ -1,10 +1,11 @@
+// CHANGE SO NEIGHBOURS RETURNS AN ITERATOR INTO ITS SET
+
 #ifndef _GRAPH_H_
 #define _GRAPH_H_
 
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <set>
 
 using namespace std;
 
@@ -45,16 +46,6 @@ public:
 
   // return a vector with all vertices
   vector<int> vertices();
-  
-  // returns true if 'walk' represents a walk on this graph
-  // A walk is a sequence of vertices (perhaps with repeated vertices) 
-  // v0, v1, . . . , vk where (vi,vi+1) is an edge for each 0 <= i < k.
-  // the length of a walk is the number of edges traversed 
-  bool isWalk(vector<int> walk);
-
-  // returns true if 'path' represents a path on this graph
-  // a path is a walk with no repeated vertices
-  bool isPath(vector<int> path);
 
 private:
   unordered_map<int, unordered_set<int>> nbrs;

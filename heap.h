@@ -1,24 +1,8 @@
-/*
-  Names:  Ang Li  Matthew Braun
-  IDs:    1550746 1497171
-  CMPUT 275, Winter 2019
-
-  Assignment 2: Directions Part 1
-
-*/
-#ifndef _HEAP_H_
-#define _HEAP_H_
-
-#include <assert.h>
-#include <cmath> // for floor
 #include <vector>
-#include <utility> // for pair
+#include <algorithm>
 
-using namespace std;
+// Only assumes the key type K is totally ordered and comparable via <
 
-// T is the type of the item to be held
-// K is the type of the key associated with each item in the heap
-// The only requirement is that K is totally ordered and comparable via <
 template <class T, class K>
 class BinaryHeap {
 public:
@@ -26,9 +10,7 @@ public:
   // is through the constructor of the variable "heap" which is called by default
 
   // return the minimum element in the heap
-  std::pair<T, K> min() const {
-    return heap[0];
-  }
+  pair<T, K> min() const;
 
   // insert an item with the given key
   // if the item is already in the heap, will still insert a new copy with this key
@@ -38,123 +20,101 @@ public:
   void popMin();
 
   // returns the number of items held in the heap
-  int size() const {
-    return heapSize;
-  }
+  int size() const;
 
 private:
   // the array holding the heap
-  std::vector< std::pair<T, K> > heap;
+  std::vector< pair<T, K> > heap;
 
-  // # of items held in the heap
-  int heapSize = 0;
+  //  will fix the heap property at index i and interate with its parent
+  void fixHeapUp(int i);
 
-  // the parent of index i
-  int parent(int i) {
-    return floor(((double) i - 1)/2);
-  }
-
-  // the left child of index i
-  int lChild(int i) {
-    return 2 * i + 1;
-  }
-
-  // the right child of index i
-  int rChild(int i) {
-    return 2 * i + 2;
-  }
-
-  // swap the contents between two pairs 
-  void swap(pair<T, K>& a, pair<T, K>& b) {
-    pair<T, K> temp = a;
-
-    a = b;
-    b = temp;
-  }
+  // will fix the heap property at index i and iterate with the child
+  // that received i's item (if appropriate)
+  void fixHeapDown(int i);
 };
 
-// insert an item with the given key
-// if the item is already in the heap, will still insert a new copy with this key
+template <class T, class K>
+pair<T, K> BinaryHeap<T, K>::min() const {
+  // the underlying vector throws an exception if the heap is empty
+  return heap.at(0);
+}
+
 template <class T, class K>
 void BinaryHeap<T, K>::insert(const T& item, const K& key) {
-  // let v be a new vertex with the pair (item, key) in the tree
-  pair<T, K> v;
-  v.first = item;
-  v.second = key;
+  pair<T, K> node(item, key);
 
-  // add v into the next new location
-  heap.push_back(v);
-  heapSize += 1;
+  // add the new item to the end of the heap
+  heap.push_back(node);
 
-  // i: index of v
-  int i = heapSize - 1;
-  // while v is not the root and key(v) < key(parent(v)) do:
-  while (i != 0 && heap[i].second < heap[parent(i)].second ){
-    // swap the items and keys between v and parent(v)
-    swap(heap[i], heap[parent(i)]);
-
-    // v <- parent(v) (crawl up the tree)
-    i = parent(i);
-  }
+  // fix the heap property
+  fixHeapUp(heap.size()-1);
 }
 
-// pop the minimum item from the heap
 template <class T, class K>
 void BinaryHeap<T, K>::popMin() {
-  // suppose the heap is not empty
-  assert(heapSize > 0);
-
-  // swap the items and keys between the root and the last vertex
-  swap(heap[0], heap[heapSize - 1]);
-
-  // pop the last item from the list
+  // move the last item of the last layer to the top
+  // if the heap has size 1, this just pops it
+  heap[0] = heap.back();
   heap.pop_back();
-  heapSize -= 1;
 
-  // edge case
-  // if # of items == 0
-  if (heapSize == 0) {
-    return;
+  // if there is anything left in the heap, fix the heap property
+  if (heap.size() > 0) {
+    fixHeapDown(0);
   }
-  // if # of items <= 2
-  else if (heapSize <= 2) {
-    if (heap[0].second > heap[heapSize - 1].second) {
-      swap(heap[0], heap[heapSize - 1]);
-    }
-    return;
-  }
+}
 
-  // general case
-  // i: index of v
-  int i = 0;
-  // while the heap property is violated at v do
-  while (heap[i].second > heap[lChild(i)].second || heap[i].second > heap[rChild(i)].second) {
-    // swap the item and key between u and child of v with smallest key
-    if (heap[lChild(i)].second < heap[rChild(i)].second) {
-      swap(heap[i], heap[lChild(i)]);
+template <class T, class K>
+int BinaryHeap<T, K>::size() const {
+  return heap.size();
+}
 
-      // v <- child of v with smallest key
-      i = lChild(i);
+template <class T, class K>
+void BinaryHeap<T, K>::fixHeapUp(int i) {
+  while (i > 0) {
+    int pi = (i-1)>>1; // parent index
+
+    // if i's key is smaller than its parent's key, swap it and go up
+    if (heap[i].second < heap[pi].second) {
+      std::swap(heap[i], heap[pi]);
+      i = pi;
     }
     else {
-      swap(heap[i], heap[rChild(i)]);
-
-      i = rChild(i);
-    }
-
-    // if v only has one child
-    if (lChild(i) == heapSize - 1) {
-      if (heap[i].second > heap[heapSize - 1].second) {
-        swap(heap[i], heap[heapSize - 1]);
-      }
-
-      break;
-    }
-    // if v has no child
-    else if (lChild(i) > heapSize - 1) {
-      break;
+      // otherwise, no more fixing needs to be done
+      return;
     }
   }
 }
 
-#endif
+template <class T, class K>
+void BinaryHeap<T, K>::fixHeapDown(int i) {
+  while (true) {
+    // calculate indices of the two children
+    int lchild = (i<<1)+1, rchild = (i<<1)+2;
+
+    // if no children, no problem
+    if (lchild >= heap.size()) {
+      return;
+    }
+
+    int min_child;
+    // identify the child with the minimum key, being careful
+    // to handle the case where there is no right child
+    if (rchild >= heap.size() || heap[lchild].second < heap[rchild].second) {
+      min_child = lchild;
+    }
+    else {
+      min_child = rchild;
+    }
+
+    // if there is a violation of the heap property for i, swap its node
+    // with the node held by the minimum-key child and repeat with this child
+    if (heap[min_child].second < heap[i].second) {
+      std::swap(heap[i], heap[min_child]);
+      i = min_child;
+    }
+    else {
+      return;
+    }
+  }
+}
