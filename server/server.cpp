@@ -76,7 +76,6 @@ void sendWayPoints(WDigraph graph, unordered_map<int, Point> points) {
           // no path
           cout << "N 0" << endl;
           assert(Serial.writeline("N 0\n"));
-          currentStatus = finish;
           break;
         }
 
@@ -92,7 +91,6 @@ void sendWayPoints(WDigraph graph, unordered_map<int, Point> points) {
         if (path.size() > 500) {
           cout << "N 0\n" << endl;
           assert(Serial.writeline("N 0\n"));
-          currentStatus = finish;
           break;
         }
 

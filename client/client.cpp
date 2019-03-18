@@ -319,14 +319,6 @@ int main() {
     }
 
     if (shared.redraw_map) {
-      // redraw the status message
-      if (curr_mode == WAIT_FOR_START) {
-        status_message("FROM?");
-      }
-      else {
-        status_message("TO?");
-      }
-
       // redraw the map and cursor
       draw_map();
       draw_cursor();
@@ -355,7 +347,15 @@ int main() {
         int32_t lineHeadx = headx - shared.map_coords.x;
         int32_t lineHeady = heady - shared.map_coords.y;
 
-        tft.drawLine(lineHeadx, lineHeady, lineHeadx, lineHeady, ILI9341_BLUE);
+        tft.drawPixel(lineHeadx, lineHeady, ILI9341_BLUE);
+      }
+
+      // redraw the status message
+      if (curr_mode == WAIT_FOR_START) {
+        status_message("FROM?");
+      }
+      else {
+        status_message("TO?");
       }
     }
   }
