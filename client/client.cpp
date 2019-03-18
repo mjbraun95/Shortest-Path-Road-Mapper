@@ -149,8 +149,9 @@ void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
         // no path
         if (shared.num_waypoints == 0) {
           // next statue
-          currentStatus = finish;
-          break;
+          status_message("No path, please reselect");
+          delay(3000);
+          return;
         }
 
         // next statue
@@ -175,7 +176,6 @@ void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
             // send acknowledgment
             Serial.print("A\n");
 
-            /*
             // find the 2nd occurrence of the blank space
             unsigned int pos = 2;
             for (pos; pos < content.length(); pos++) {
@@ -183,15 +183,14 @@ void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
                 break;
               }
             }
-            */
 
-            shared.waypoints[i].lat = content.substring(2, 9).toInt();
-            shared.waypoints[i].lon = content.substring(10, 19).toInt();
+            shared.waypoints[i].lat = content.substring(2, pos).toInt();
+            shared.waypoints[i].lon = content.substring(pos + 1).toInt();
           }
           else {
             break; // invalid response
           }
-          if (i == shared.num_waypoints - 1) {
+          if (i == shared.num_waypoints - 1 || shared.num_waypoints == 1) {
             // next state
             currentStatus = finish;
           }
@@ -308,9 +307,7 @@ int main() {
 
         // TODO: communicate with the server to get the waypoints
         getWayPoints(start, end);
-        if (shared.num_waypoints > 1) {
-          shared.redraw_map = 1;
-        }
+        shared.redraw_map = 1;
 
         // now we have stored the path length in
         // shared.num_waypoints and the waypoints themselves in
@@ -337,8 +334,8 @@ int main() {
       draw_cursor();
 
       // TODO: draw the route if there is one
-      for (int i = 0; i < shared.num_waypoints - 1; ++i)
-        {
+      if (shared.numberOfWayPoints > 1) {
+        for (int i = 0; i < shared.num_waypoints - 1; ++i) {
           int32_t heady= latitude_to_y(shared.map_number, shared.waypoints[i].lat);
           int32_t headx = longitude_to_x(shared.map_number, shared.waypoints[i].lon);
           int32_t taily = latitude_to_y(shared.map_number, shared.waypoints[i + 1].lat);
@@ -351,6 +348,17 @@ int main() {
 
           tft.drawLine(lineHeadx, lineHeady, lineTailx, lineTaily, ILI9341_BLUE);
         }
+      }
+      // only one way point
+      else {
+        int32_t heady= latitude_to_y(shared.map_number, shared.waypoints[0].lat);
+        int32_t headx = longitude_to_x(shared.map_number, shared.waypoints[0].lon);
+
+        int32_t lineHeadx = headx - shared.map_coords.x;
+        int32_t lineHeady = heady - shared.map_coords.y;
+
+        tft.drawLine(lineHeadx, lineHeady, lineHeadx, lineHeady, ILI9341_BLUE);
+      }
     }
   }
 

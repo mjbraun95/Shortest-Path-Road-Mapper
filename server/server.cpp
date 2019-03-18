@@ -121,6 +121,7 @@ void sendWayPoints(WDigraph graph, unordered_map<int, Point> points) {
           content = Serial.readline(1000);
           cout << content.front() << endl;
           if (content.front() != 'A') {
+            path.clear();
             break; // time out
           }
         }
