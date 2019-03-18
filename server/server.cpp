@@ -72,6 +72,14 @@ void sendWayPoints(WDigraph graph, unordered_map<int, Point> points) {
         unordered_map<int, PLI> tree;
         dijkstra(graph, start, tree);
 
+        if (tree.find(end) == tree.end()) {
+          // no path
+          cout << "N 0" << endl;
+          assert(Serial.writeline("N 0\n"));
+          currentStatus = finish;
+          break;
+        }
+
         path.clear();
         // read off the path by stepping back through the search tree
         while (end != start) {
@@ -80,11 +88,11 @@ void sendWayPoints(WDigraph graph, unordered_map<int, Point> points) {
         }
         path.push_front(start);
 
-        // no path || # of way points too large
-        if (path.size() == 0 || path.size() > 500) {
+        // # of way points too large
+        if (path.size() > 500) {
           cout << "N 0\n" << endl;
           assert(Serial.writeline("N 0\n"));
-          currentStatus = getQuery;
+          currentStatus = finish;
           break;
         }
 

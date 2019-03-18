@@ -79,8 +79,6 @@ int getLine(String &content, unsigned long timeOut) {
   buf_len = 0;
   buffer[buf_len] = 0;
 
-  char in_char;
-
   unsigned long currentTime = millis();
 
   while (millis() - currentTime < timeOut) {
@@ -112,7 +110,6 @@ int getLine(String &content, unsigned long timeOut) {
 void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
   status_message("Receiving path...");
 
-
   // indicate the current statue when communicating with the server
   enum {sendQuery, numberOfWayPoints, storeWayPoints, finish} currentStatus = sendQuery;
   // message got from the server
@@ -142,8 +139,6 @@ void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
       }
 
       case numberOfWayPoints: {
-        // send acknowledgment
-        Serial.print("A\n");
         shared.num_waypoints = content.substring(2).toInt();
 
         // no path
@@ -153,6 +148,9 @@ void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
           delay(3000);
           return;
         }
+
+        // send acknowledgment
+        Serial.print("A\n");
 
         // next statue
         currentStatus = storeWayPoints;
@@ -193,9 +191,9 @@ void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
           if (i == shared.num_waypoints - 1 || shared.num_waypoints == 1) {
             // next state
             currentStatus = finish;
+            break;
           }
         }
-        break;
       }
 
       case finish: {
@@ -334,7 +332,7 @@ int main() {
       draw_cursor();
 
       // TODO: draw the route if there is one
-      if (shared.numberOfWayPoints > 1) {
+      if (shared.num_waypoints > 1) {
         for (int i = 0; i < shared.num_waypoints - 1; ++i) {
           int32_t heady= latitude_to_y(shared.map_number, shared.waypoints[i].lat);
           int32_t headx = longitude_to_x(shared.map_number, shared.waypoints[i].lon);
@@ -350,7 +348,7 @@ int main() {
         }
       }
       // only one way point
-      else {
+      else if (shared.num_waypoints == 1) {
         int32_t heady= latitude_to_y(shared.map_number, shared.waypoints[0].lat);
         int32_t headx = longitude_to_x(shared.map_number, shared.waypoints[0].lon);
 
