@@ -1,13 +1,27 @@
+/*
+  Names:  Ang Li  Matthew Braun
+  IDs:    1550746 1497171
+  CMPUT 275, Winter 2019
+
+  Assignment 2: Directions Part 2
+  Modified from the part 1 solution given in E-class
+*/
 #include <Arduino.h>
 #include <Adafruit_ILI9341.h>
 #include <SD.h>
 #include "consts_and_types.h"
 #include "map_drawing.h"
 
-// using namespace std;
-
 // the variables to be shared across the project, they are declared here!
 shared_vars shared;
+
+// max size of buffer, including null terminator
+const uint16_t buf_size = 256;
+// current number of chars in buffer, not counting null terminator
+uint16_t buf_len = 0;
+
+// input buffer
+char* buffer = (char *) malloc(buf_size);
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(clientpins::tft_cs, clientpins::tft_dc);
 
@@ -19,7 +33,7 @@ void setup() {
   pinMode(clientpins::zoom_in_pin, INPUT_PULLUP);
   pinMode(clientpins::zoom_out_pin, INPUT_PULLUP);
 
-  // initialize joystick pins and calibrate centre reading
+  // initialize joystick pins and calibrate center reading
   pinMode(clientpins::joy_button_pin, INPUT_PULLUP);
   // x and y are reverse because of how our joystick is oriented
   shared.joy_centre = xy_pos(analogRead(clientpins::joy_y_pin), analogRead(clientpins::joy_x_pin));
@@ -27,7 +41,6 @@ void setup() {
   // initialize serial port
   Serial.begin(9600);
   Serial.flush(); // get rid of any leftover bits
-
 
   // initially no path is stored
   shared.num_waypoints = 0;
@@ -58,6 +71,151 @@ void setup() {
 
   // initial status message
   status_message("FROM?");
+}
+
+// get line input form the serial port
+int getLine(String &content, unsigned long timeOut) {
+  // set up buffer as empty string
+  buf_len = 0;
+  buffer[buf_len] = 0;
+
+  char in_char;
+
+  unsigned long currentTime = millis();
+
+  while (millis() - currentTime < timeOut) {
+    if (Serial.available()) {
+      // read the incoming byte:
+      char in_char = Serial.read();
+
+      // if end of line is received, waiting for line is done:
+      if (in_char == '\n' || in_char == '\r') {
+        // now we process the buffer
+        content = String(buffer);
+        return 0;
+      }
+      else {
+        // add character to buffer, provided that we don't overflow.
+        // drop any excess characters.
+        if (buf_len < buf_size - 1) {
+          buffer[buf_len] = in_char;
+          buf_len++;
+          buffer[buf_len] = '\0';
+        }
+      }
+    }
+  }
+  return -1; // time out
+}
+
+// communicate with the server to get the way points
+void getWayPoints(lon_lat_32 start, lon_lat_32 end) {
+  status_message("Receiving path...");
+
+
+  // indicate the current statue when communicating with the server
+  enum {sendQuery, numberOfWayPoints, storeWayPoints, finish} currentStatus = sendQuery;
+  // message got from the server
+  String content;
+
+  while(true) {
+    switch (currentStatus) {
+      case sendQuery: {
+        // send the query
+        // e.g R 5365486 -11333915 5364728 -11335891
+        String outMsg = ("R " + String(start.lat) + " " + String(start.lon) + " " +
+          String(end.lat) + " " + String(end.lon) + "\n");
+        Serial.print(outMsg);
+
+        // get line input form the serial port
+        // Arduino waits for the # for way points to be received from the server
+        if (getLine(content, 10000) < 0) {
+          break; // time out
+        }
+
+        // e.g. N 8<\n>
+        if (content.charAt(0) == 'N') {
+          // next statue
+          currentStatus = numberOfWayPoints;
+        }
+        break;
+      }
+
+      case numberOfWayPoints: {
+        // send acknowledgment
+        Serial.print("A\n");
+        shared.num_waypoints = content.substring(2).toInt();
+
+        // no path
+        if (shared.num_waypoints == 0) {
+          // next statue
+          currentStatus = finish;
+          break;
+        }
+
+        // next statue
+        currentStatus = storeWayPoints;
+        break;
+      }
+      
+      case storeWayPoints: {
+        // if the required condition fails in the half way
+        // back to the start
+        currentStatus = sendQuery;
+
+        // get the way points & store them in the array shared.waypoints[]
+        for (int i = 0; i < shared.num_waypoints; ++i) {
+          // get line input form the serial port
+          if (getLine(content, 1000) < 0) {
+            break; // time out
+          }
+
+          // e.g. W 5365488 -11333914<\n>
+          if (content.charAt(0) == 'W') {
+            // send acknowledgment
+            Serial.print("A\n");
+
+            /*
+            // find the 2nd occurrence of the blank space
+            unsigned int pos = 2;
+            for (pos; pos < content.length(); pos++) {
+              if (content.charAt(pos) == ' ') {
+                break;
+              }
+            }
+            */
+
+            shared.waypoints[i].lat = content.substring(2, 9).toInt();
+            shared.waypoints[i].lon = content.substring(10, 19).toInt();
+          }
+          else {
+            break; // invalid response
+          }
+          if (i == shared.num_waypoints - 1) {
+            // next state
+            currentStatus = finish;
+          }
+        }
+        break;
+      }
+
+      case finish: {
+        // if the required condition fails in the half way
+        // back to the start
+        currentStatus = sendQuery;
+
+        // get line input form the serial port
+        if (getLine(content, 1000) < 0) {
+          break; // time out
+        }
+
+        if (content.charAt(0) == 'E') {
+          return; // query finished
+        }
+        break;
+      }
+    } 
+  }
 }
 
 void process_input() {
@@ -131,54 +289,37 @@ int main() {
     }
 
     // if the joystick button was clicked
-    delay(5);
     if (shared.joy_button_pushed) {
 
       if (curr_mode == WAIT_FOR_START) {
         // if we were waiting for the start point, record it
         // and indicate we are waiting for the end point
         start = get_cursor_lonlat();
-        Serial.println("Start: ");
-        Serial.println(start.lat);
-        // Serial.print(",");
-        Serial.println(start.lon);
         curr_mode = WAIT_FOR_STOP;
         status_message("TO?");
 
         // wait until the joystick button is no longer pushed
         while (digitalRead(clientpins::joy_button_pin) == LOW) {}
-        // curr_mode = WAIT_FOR_START;
       }
-      else if (curr_mode == WAIT_FOR_STOP) {
+      else {
         // if we were waiting for the end point, record it
         // and then communicate with the server to get the path
         end = get_cursor_lonlat();
-        Serial.println("End: ");
-        Serial.println(end.lat);
-        // Serial.print(",");
-        Serial.println(end.lon);
-        curr_mode = WAIT_FOR_START;
-        status_message("Waiting for path...");
-        // wait until the joystick button is no longer pushed
-        while (digitalRead(clientpins::joy_button_pin) == LOW) {}
 
         // TODO: communicate with the server to get the waypoints
-        for (int i = 0; i < shared.num_waypoints; i++)
-        {
-          // shared.waypoints[i].lon = 
+        getWayPoints(start, end);
+        if (shared.num_waypoints > 1) {
+          shared.redraw_map = 1;
         }
 
         // now we have stored the path length in
         // shared.num_waypoints and the waypoints themselves in
         // the shared.waypoints[] array, switch back to asking for the
         // start point of a new request
-
-
-
-        // curr_mode = WAIT_FOR_START;
+        curr_mode = WAIT_FOR_START;
 
         // wait until the joystick button is no longer pushed
-        // while (digitalRead(clientpins::joy_button_pin) == LOW) {}
+        while (digitalRead(clientpins::joy_button_pin) == LOW) {}
       }
     }
 
@@ -196,6 +337,20 @@ int main() {
       draw_cursor();
 
       // TODO: draw the route if there is one
+      for (int i = 0; i < shared.num_waypoints - 1; ++i)
+        {
+          int32_t heady= latitude_to_y(shared.map_number, shared.waypoints[i].lat);
+          int32_t headx = longitude_to_x(shared.map_number, shared.waypoints[i].lon);
+          int32_t taily = latitude_to_y(shared.map_number, shared.waypoints[i + 1].lat);
+          int32_t tailx = longitude_to_x(shared.map_number, shared.waypoints[i + 1].lon);
+
+          int32_t lineHeadx = headx - shared.map_coords.x;
+          int32_t lineHeady = heady - shared.map_coords.y;
+          int32_t lineTailx = tailx - shared.map_coords.x;
+          int32_t lineTaily = taily - shared.map_coords.y;
+
+          tft.drawLine(lineHeadx, lineHeady, lineTailx, lineTaily, ILI9341_BLUE);
+        }
     }
   }
 

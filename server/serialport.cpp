@@ -1,4 +1,4 @@
-#include "SerialPort.h"
+#include "serialport.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
