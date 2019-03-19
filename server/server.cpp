@@ -111,9 +111,8 @@ void sendWayPoints(WDigraph graph, unordered_map<int, Point> points) {
       }
 
       case sendWayPoints: {
-        // if the required condition fails in the half way
-        // back to the start
-        currentStatus = getQuery;
+        // next statue
+        currentStatus = finish;
 
         // output the path
         for (auto v : path) {
@@ -128,12 +127,13 @@ void sendWayPoints(WDigraph graph, unordered_map<int, Point> points) {
           cout << content.front() << endl;
           if (content.front() != 'A') {
             path.clear();
+
+            // if the required condition fails in the half way
+            // back to the start
+            currentStatus = getQuery;
             break; // time out
           }
         }
-
-        // next statue
-        currentStatus = finish;
         break;
       }
         
