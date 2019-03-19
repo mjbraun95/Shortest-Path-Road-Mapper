@@ -30,6 +30,45 @@ Included Files:
         *wdigraph.h
     *README
 
+Wiring instruction:
+
+    NOTE: In addition to this wiring you also have to download the .lcd files
+        from eClass and put them on your SD card (after unzipping them).
+
+    TFT Display:
+
+        The display pins are numbered left to right in this document when they are being viewed
+        with their labels showing right side up. Note you do not require the touchscreen for this assignment,
+        so it is probably a lot easier to not wire the Y+/X+/Y-/X- pins.
+
+        Display Pin     Arduino Mega Pin
+        1 GND           BB GND bus
+        2 Vin           BB Vcc (+ive) bus
+
+        4 CLK           Pin 52
+        5 MISO          Pin 50
+        6 MOSI          Pin 51
+        7 CS            Pin 10
+        8 D/C           Pin 9
+
+        19 CCS          Pin 6
+
+    Zoom in and out buttons:
+
+        Button          Arduino Mega Pin
+        Zoom In         Pin 2
+        Zoom Out        Pin 3
+
+    Joystick connections:
+
+        Joystick Pin    Arduino Mega Pin
+        +5v             Vcc
+        GND             GND
+        VRx             Analog 1
+        VRy             Analog 0
+        SW              Pin 8
+
+
 Server Makefile Target:
     - make: Builds the project.
     - make server: Links all object files.
@@ -45,7 +84,7 @@ Running Instructions:
             $./server
         to compile the server software and run its executable file.
 
-    3. The server will now communicate with the Arduino program when pushing its joystick button, by sending the cursor's coordinates to the server. Click at two different coordinate points to view the shortest path between them via road. 
+    3. The server will now communicate with the Arduino program when pushing its joystick button, by sending the cursor's coordinates to the server. Click at two different coordinate points to view the shortest path between them via road. You can push the zoom buttons to zoom in & out.
 
 List of Code Modified From the Template:
     client.cpp
@@ -65,4 +104,6 @@ List of Code Modified From the Template:
         14,49c158,159
 
 Notes and Assumptions:
-    All of our modified code is located within client.cpp, server.cpp, README, and the server's Makefile
+    All of our modified code is located within client.cpp, server.cpp, README, and the server's Makefile.
+    Our server.cpp is build upon the solution for part 1 provided in E-class.
+    Run the Arduino first then launch the server.
